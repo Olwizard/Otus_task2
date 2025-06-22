@@ -1,0 +1,37 @@
+terraform {
+  required_providers {
+    null = {
+      source  = "hashicorp/null"
+      version = "~> 3.2.4"
+    }
+  }
+}
+
+provider "null" {}
+
+# Ресурс для настройки Docker Compose на удаленном сервере
+resource "null_resource" "setup_docker_compose" {
+  connection {
+    type        = "ssh"
+    host        = "0.0.0.0" # IP-адрес сервера
+    user        = "cyberops"     # Пользователь для подключения
+    private_key = file("~/.ssh/cyber.rsa") # Путь к приватному ключу SSH
+  }
+
+    # Создание директории перед копированием файла
+  provisioner "remote-exec" {
+    inline = [
+      "mkdir -p /home/cyberops/ml_ops", # Создаем директорию, если она не существует
+    ]
+  }
+
+  # Копирование файла .env на удаленный сервер
+  provisioner "file" {
+    source      = "${path.module}/.env" # Локальный путь к файлу .env
+    destination = "/home/cyberops/ml_ops/.env" # Путь на удаленном сервере
+  }
+
+  provisioner "remote-exec" {
+    script = "setup.sh"
+  }
+}
